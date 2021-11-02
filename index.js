@@ -6,8 +6,8 @@ const io = require('socket.io')(8080, {
 
 let users = [];
 
-const addUser = (userId,socketId) => {
-    !users.some(user => user.id === userId) && users.push({ userId, socketId });
+const addUser = (userId,userName,socketId) => {
+    !users.some((user) => user.userId === userId) && users.push({ userId, userName, socketId });
 }
 
 const removeUser = (socketId) => {
@@ -21,16 +21,26 @@ const getUser = (userId) => {
 io.on('connection', (socket) => {
     console.log("a user connected");
     // add user from client socket
-    socket.on('addUser', (userId) => {
-        addUser(userId,socket.id);
+    socket.on('addUser', ({userId, userName}) => {
+        addUser(userId,userName,socket.id);
         io.emit('getUsers', users);
     });
 
     // send and get message
     socket.on('sendMessage', ({ senderId, receiverId, text }) => {
         const user = getUser(receiverId);
-        io.to(user.socketId).emit('getMessage', { senderId, text });
+        if(user) {
+            io.to(user.socketId).emit('getMessage', { senderId, text });
+        }
     });
+
+    socket.on('messageNotify', ({ senderId, receiverId }) => {
+        const receiverUser = getUser(receiverId);
+        const senderUser = getUser(senderId);
+        if(receiverUser) {
+            io.to(receiverUser.socketId).emit('getMessageNotify', { user: senderUser.userName, userId: senderUser.userId, action: 'đã nhắn tin cho bạn' });
+        }
+    })
 
     socket.on('disconnect', () => {
         console.log("a user disconnected");
