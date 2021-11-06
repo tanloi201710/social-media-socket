@@ -1,4 +1,10 @@
-const io = require('socket.io')(8080, {
+const dotenv = require('dotenv');
+
+dotenv.config();
+
+const PORT = process.env.PORT
+
+const io = require('socket.io')(PORT, {
     cors: {
         origin: 'http://localhost:3000'
     }
